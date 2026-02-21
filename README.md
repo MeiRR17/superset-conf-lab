@@ -1,2 +1,21 @@
-# superset-conf-lab
-Production-grade MVP for real-time Cisco Telephony (CUCM/UCCX) load monitoring. Features a FastAPI collection gateway, PostgreSQL time-series storage, and Apache Superset visualizations, fully orchestrated with Docker.
+# מערכת ניטור עומסי טלפוניה (Telephony Load Monitoring System) - MVP
+
+מערכת זו מהווה תשתית מבצעית (MVP) לניטור, איסוף והצגה ויזואלית של עומסים משרתי Cisco (CUCM ו-UCCX). המערכת תוכננה במיוחד עבור סביבות עבודה מנותקות (Air-Gapped) ומבוססת על ארכיטקטורת Microservices מודרנית.
+
+## 🚀 מטרת הפרויקט
+בניית "מעבדה לוקאלית" המדמה שרתי סיסקו אמיתיים, המאפשרת פיתוח ובחינת מנועי איסוף נתונים (Exporters) ודאשבורדים לניהול משמרת, מבלי לסכן את סביבת הייצור האמיתית.
+
+## 🏗️ ארכיטקטורת המערכת
+המערכת מורכבת מ-6 רכיבים המנוהלים ב-Docker Compose:
+1. **Mock Cisco Server**: שרת FastAPI המדמה Endpoints של CUCM ו-UCCX ומייצר נתוני עומס משתנים.
+2. **Proxy Gateway**: ה"מוח" של המערכת. שואב נתונים באופן אוטומטי (כל 60 שניות), מבצע נורמליזציה ושומר למסד הנתונים.
+3. **PostgreSQL**: בסיס נתונים סדרתי (Time-Series) המנהל שני מאגרי מידע: אחד למדדי הטלפוניה ואחד למטא-דאטה של Superset.
+4. **Apache Superset**: ממשק BI מתקדם להצגת גרפים חיים וניתוח עומסים היסטורי.
+5. **Redis**: שכבת זיכרון מטמון (Cache) לשיפור ביצועי הדאשבורדים.
+6. **Nginx**: שרת Reverse Proxy המהווה את נקודת הכניסה המאוחדת למערכת בפורט 80.
+
+## 🛠️ הוראות הפעלה מהירה (Quick Start)
+1. ודא ש-Docker ו-Docker Compose מותקנים.
+2. שכפל את הפרויקט והרץ בטרמינל:
+   ```bash
+   docker-compose up -d --build
