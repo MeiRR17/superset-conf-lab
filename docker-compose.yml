@@ -1,0 +1,301 @@
+# =============================================================================
+# Telephony Load Monitoring System - Docker Compose Configuration
+# =============================================================================
+# This file orchestrates all 6 services of the Telephony Load Monitoring System:
+#   1. PostgreSQL - Database for metrics and Superset metadata
+#   2. Redis - Caching layer for Superset
+#   3. Mock Server - Simulates Cisco UCCX and CUCM endpoints
+#   4. Proxy Gateway - Collects metrics and stores in PostgreSQL
+#   5. Superset - Apache Superset for dashboards and visualization
+#   6. Nginx - Reverse proxy and single entry point
+# =============================================================================
+
+version: '3.8'
+
+# =============================================================================
+# Services Definition
+# =============================================================================
+services:
+
+  # ===========================================================================
+  # Service 1: PostgreSQL Database
+  # ===========================================================================
+  # Stores both the telephony metrics data AND Superset's metadata.
+  # Uses init.sql to create both databases on first startup.
+  # ===========================================================================
+  postgres:
+    image: postgres:15-alpine
+    container_name: telephony-postgres
+    restart: unless-stopped
+    environment:
+      # PostgreSQL superuser credentials
+      # In production, use Docker secrets or environment file
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: postgres  # Default database, we create others via init.sql
+      
+      # Performance tuning for production workloads
+      POSTGRES_INITDB_ARGS: "--encoding=UTF8 --locale=en_US.UTF-8"
+    
+    volumes:
+      # Persist database data across container restarts
+      - postgres_data:/var/lib/postgresql/data
+      # Initialize databases and tables on first startup
+      - ./postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    
+    ports:
+      # Expose PostgreSQL port for external access (optional, for debugging)
+      - "5432:5432"
+    
+    healthcheck:
+      # Verify PostgreSQL is accepting connections
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    
+    networks:
+      - telephony-network
+
+  # ===========================================================================
+  # Service 2: Redis Cache
+  # ===========================================================================
+  # Provides caching for Superset to improve dashboard performance.
+  # Also used as Celery broker for async tasks.
+  # ===========================================================================
+  redis:
+    image: redis:7-alpine
+    container_name: telephony-redis
+    restart: unless-stopped
+    
+    command: >
+      redis-server
+      --maxmemory 256mb
+      --maxmemory-policy allkeys-lru
+      --appendonly yes
+      --appendfsync everysec
+    
+    volumes:
+      # Persist Redis data
+      - redis_data:/data
+    
+    ports:
+      # Expose Redis port (optional, for debugging)
+      - "6379:6379"
+    
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    
+    networks:
+      - telephony-network
+
+  # ===========================================================================
+  # Service 3: Mock Cisco Server
+  # ===========================================================================
+  # Simulates Cisco UCCX and CUCM API endpoints with realistic fluctuating data.
+  # Provides fake metrics for the proxy gateway to collect.
+  # ===========================================================================
+  mock-server:
+    build:
+      context: ./mock-server
+      dockerfile: Dockerfile
+    container_name: telephony-mock-server
+    restart: unless-stopped
+    
+    environment:
+      # FastAPI/Uvicorn settings
+      PYTHONUNBUFFERED: 1
+      LOG_LEVEL: info
+    
+    ports:
+      # Direct access for testing (bypasses nginx)
+      - "8001:8001"
+    
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8001/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 5s
+    
+    networks:
+      - telephony-network
+
+  # ===========================================================================
+  # Service 4: Proxy Gateway
+  # ===========================================================================
+  # FastAPI application that:
+  # - Polls mock-server for metrics (UCCX and CUCM)
+  # - Transforms and normalizes data
+  # - Persists metrics to PostgreSQL
+  # - Provides API for manual collection
+  # ===========================================================================
+  proxy-gateway:
+    build:
+      context: ./proxy-gateway
+      dockerfile: Dockerfile
+    container_name: telephony-proxy-gateway
+    restart: unless-stopped
+    
+    environment:
+      # Database connection string
+      DATABASE_URL: postgresql://postgres:password@postgres:5432/telephony_db
+      
+      # Mock server URL (service name resolves via Docker DNS)
+      MOCK_SERVER_URL: http://mock-server:8001
+      
+      # Polling configuration
+      ENABLE_POLLING: "true"
+      POLLING_INTERVAL: "60"  # Collect metrics every 60 seconds
+      REQUEST_TIMEOUT: "10"
+      
+      PYTHONUNBUFFERED: 1
+    
+    ports:
+      # Direct access for testing (bypasses nginx)
+      - "8000:8000"
+    
+    depends_on:
+      postgres:
+        condition: service_healthy
+      mock-server:
+        condition: service_healthy
+    
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    
+    networks:
+      - telephony-network
+
+  # ===========================================================================
+  # Service 5: Apache Superset
+  # ===========================================================================
+  # Business intelligence and visualization platform.
+  # - Connects to telephony_db for metrics data
+  # - Uses superset_db for internal metadata
+  # - Caches data in Redis
+  # ===========================================================================
+  superset:
+    build:
+      context: ./superset
+      dockerfile: Dockerfile
+    container_name: telephony-superset
+    restart: unless-stopped
+    
+    environment:
+      # Database configuration for Superset metadata
+      DB_USER: postgres
+      DB_PASSWORD: password
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: superset_db
+      
+      # Redis configuration
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_DB: 0
+      
+      # Superset configuration
+      SUPERSET_SECRET_KEY: your-super-secret-key-change-in-production-1234567890abcdef
+      
+      # Flask configuration
+      FLASK_ENV: production
+      PYTHONUNBUFFERED: 1
+    
+    ports:
+      # Direct access for testing (bypasses nginx)
+      - "8088:8088"
+    
+    volumes:
+      # Persist Superset uploads and exports
+      - superset_data:/app/superset_home
+    
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8088/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s  # Superset needs time to initialize
+    
+    networks:
+      - telephony-network
+
+  # ===========================================================================
+  # Service 6: Nginx Reverse Proxy
+  # ===========================================================================
+  # Single entry point for the entire system.
+  # Routes requests based on URL path:
+  #   /       -> Superset (port 8088)
+  #   /api/   -> Proxy Gateway (port 8000)
+  #   /mock/  -> Mock Server (port 8001)
+  # ===========================================================================
+  nginx:
+    image: nginx:alpine
+    container_name: telephony-nginx
+    restart: unless-stopped
+    
+    volumes:
+      # Custom nginx configuration
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    
+    ports:
+      # Main entry point - all traffic comes through here
+      - "80:80"
+    
+    depends_on:
+      superset:
+        condition: service_healthy
+      proxy-gateway:
+        condition: service_healthy
+      mock-server:
+        condition: service_healthy
+    
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "-", "http://localhost/nginx-health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    
+    networks:
+      - telephony-network
+
+# =============================================================================
+# Named Volumes for Data Persistence
+# =============================================================================
+volumes:
+  # PostgreSQL data directory
+  postgres_data:
+    driver: local
+  
+  # Redis data directory
+  redis_data:
+    driver: local
+  
+  # Superset home directory (uploads, exports)
+  superset_data:
+    driver: local
+
+# =============================================================================
+# Docker Networks
+# =============================================================================
+networks:
+  # Custom bridge network for service communication
+  telephony-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16

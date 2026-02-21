@@ -1,0 +1,20 @@
+# =============================================================================
+# Mock Cisco Server - Python Dependencies
+# =============================================================================
+# These are the required packages for the FastAPI mock server that simulates
+# Cisco UCCX and CUCM endpoints.
+# =============================================================================
+
+# FastAPI - Modern, fast web framework for building APIs
+fastapi==0.104.1
+
+# Uvicorn - ASGI server to run FastAPI
+# Standard package includes uvloop and httptools for better performance
+uvicorn[standard]==0.24.0
+
+# Pydantic - Data validation using Python type hints (included with FastAPI)
+# Used for request/response models
+pydantic==2.5.2
+
+# Python-dateutil - Useful for timestamp manipulation
+python-dateutil==2.8.2

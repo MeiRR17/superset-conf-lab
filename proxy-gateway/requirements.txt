@@ -1,0 +1,29 @@
+# =============================================================================
+# Proxy Gateway - Python Dependencies
+# =============================================================================
+# These are the required packages for the FastAPI proxy gateway that collects
+# metrics from mock Cisco servers and persists to PostgreSQL.
+# =============================================================================
+
+# FastAPI - Modern, fast web framework for building APIs
+fastapi==0.104.1
+
+# Uvicorn - ASGI server to run FastAPI
+uvicorn[standard]==0.24.0
+
+# SQLAlchemy - SQL toolkit and ORM for PostgreSQL
+# asyncpg is included as an extra for async PostgreSQL support
+sqlalchemy[asyncpg]==2.0.23
+
+# Psycopg2-binary - PostgreSQL adapter for Python
+# Used by SQLAlchemy as the default synchronous driver
+psycopg2-binary==2.9.9
+
+# Requests - HTTP library for calling mock server APIs
+requests==2.31.0
+
+# Pydantic - Data validation using Python type hints
+pydantic==2.5.2
+
+# Python-dateutil - Useful for timestamp manipulation
+python-dateutil==2.8.2
