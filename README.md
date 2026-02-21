@@ -19,3 +19,41 @@
 2. שכפל את הפרויקט והרץ בטרמינל:
    ```bash
    docker-compose up -d --build
+המתן כ-90 שניות לעלייה מלאה של Superset.
+
+גישה למערכת: http://localhost:8088 (שם משתמש: admin, סיסמה: admin).
+
+📊 מה ניתן לעשות עם המערכת כרגע?
+ניטור חי: הצגת גרפים של שימוש ב-CPU, כמות שיחות בתור (Calls in Queue) וסוכנים פעילים ב-UCCX.
+
+שאילתות SQL: שימוש ב-SQL Lab של Superset לביצוע תחקירים על נתוני עומס היסטוריים.
+
+בדיקת תקינות (Health): וידוא זרימת נתונים מקצה לקצה דרך ה-Log של ה-Proxy-Gateway.
+
+🔮 פוטנציאל פיתוח והרחבה (Future Road-Map)
+המערכת נבנתה כבסיס גמיש שניתן להרחיב לכיוונים הבאים:
+
+חיבור לשרתים אמיתיים: החלפת ה-URL של ה-Mock בכתובות IP של שרתי הייצור (CUCM/UCCX) ועדכון ה-Authentication.
+
+מנוע התראות (Alerting): הגדרת חוקים בסופרסט שישלחו מייל/בוט במקרה של חריגה בעומס (למשל: מעל 40 שיחות בתור).
+
+חיזוי עומסים (AI): שילוב מודל למידת מכונה (Machine Learning) בתוך ה-Proxy שיחזה עומסים עתידיים על בסיס נתוני עבר.
+
+תמיכה ב-SOAP: הרחבת מנוע האיסוף לתמיכה ב-Cisco AXL (XML) עבור נתונים שלא זמינים ב-REST.
+
+💡 איך זה עוזר לנו בפיתוח המעשי?
+פיתוח בטוח: מאפשר לתוכניתנים במדור לכתוב קוד "על יבש" בלי גישה לרשת המבצעית.
+
+סטנדרטיזציה: יצירת "נוהל הלבנה" ו"נוהל פיתוח" אחיד המבוסס על קונטיינרים.
+
+הוכחת יכולת (POC): הצגת דאשבורד עובד למפקדים/אחמ"שים תוך ימים ספורים מהקמת הפרויקט.
+
+### איך זה עוזר לך באופן אישי כ"ארכיטקט"?
+
+1. **בהירות מול הצוות**: כשתביא חייל חדש למדור, הוא יקרא את ה-README ויבין תוך 5 דקות את כל הארכיטקטורה. זה חוסך לך שעות של הסברים.
+2. **תיעוד נהלים**: זהו הצעד הראשון בבניית **נוהל פיתוח ב-Docker** שדיברנו עליו קודם.
+3. **תכנית פעולה**: סעיף ה-Road-Map מראה למפקדים שלך שאתה לא רק "פותר תקלות", אלא אסטרטג שרואה 5 צעדים קדימה (חיזוי AI, תמיכה ב-SOAP וכו').
+
+ברגע שהקוד ב-GitHub, תוכל תמיד לשלוח לי לינקים לקבצים ספציפיים כשנרצה להוסיף פיצ'רים חדשים.
+
+**תרצה שנתחיל לנסח עכשיו את אחד הנהלים הטכניים (למשל, איך מבצעים "הלבנה" של Docker לסביבה הצבאית)?**
