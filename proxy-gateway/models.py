@@ -155,6 +155,254 @@ class TelephonyMetric(Base):
 
 
 # =============================================================================
+# TGW (Trunk Gateway) Metrics Model
+# =============================================================================
+class TGWMetric(Base):
+    """
+    SQLAlchemy model for TGW (Trunk Gateway) metrics.
+    
+    This model represents metrics collected from TGW routers via SNMP.
+    Each record captures:
+    - Active trunk utilization and status
+    - Interface bandwidth and error counters
+    - CPU and memory usage from the router
+    
+    Attributes:
+        id: Primary key, auto-incrementing integer
+        timestamp: UTC timestamp when metric was recorded
+        server_type: Always 'tgw'
+        metric_name: Name of the TGW metric being measured
+        metric_value: Numeric value of measurement
+        unit: Unit of measurement ('count', 'percent', 'mbps', etc.)
+    """
+    
+    __tablename__ = "telephony_metrics"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    timestamp = Column(
+        DateTime(timezone=True),
+        nullable=False,
+        default=datetime.utcnow,
+        server_default=func.now()
+    )
+    server_type = Column(
+        String(50),
+        nullable=False,
+        default="tgw",
+        index=True,
+        comment="TGW router identifier"
+    )
+    metric_name = Column(
+        String(100),
+        nullable=False,
+        index=True,
+        comment="TGW metric name (active_tunnels, bandwidth_in_mbps, etc.)"
+    )
+    metric_value = Column(
+        Float,
+        nullable=False,
+        comment="Numeric TGW metric value"
+    )
+    unit = Column(
+        String(20),
+        nullable=False,
+        comment="Unit of measurement for TGW metric"
+    )
+    
+    __table_args__ = (
+        Index('idx_tgw_metrics_timestamp', 'timestamp'),
+        Index('idx_tgw_metrics_name_timestamp', 'metric_name', 'timestamp'),
+        {'comment': 'TGW router metrics collected via SNMP'}
+    )
+    
+    def __repr__(self) -> str:
+        return (
+            f"<TGWMetric("
+            f"id={self.id}, "
+            f"metric_name='{self.metric_name}', "
+            f"value={self.metric_value}, "
+            f"unit='{self.unit}', "
+            f"timestamp='{self.timestamp}')>"
+        )
+    
+    def to_dict(self) -> dict:
+        return {
+            "id": self.id,
+            "timestamp": self.timestamp.isoformat() if self.timestamp else None,
+            "server_type": self.server_type,
+            "metric_name": self.metric_name,
+            "metric_value": self.metric_value,
+            "unit": self.unit
+        }
+
+
+# =============================================================================
+# SBC (Session Border Controller) Metrics Model
+# =============================================================================
+class SBCMetric(Base):
+    """
+    SQLAlchemy model for SBC (Session Border Controller) metrics.
+    
+    This model represents metrics collected from SBC/CUBE devices via REST API.
+    Each record captures:
+    - Session statistics and call rates
+    - DSP resource utilization
+    - CPU and memory usage
+    - Call rejection and error rates
+    
+    Attributes:
+        id: Primary key, auto-incrementing integer
+        timestamp: UTC timestamp when metric was recorded
+        server_type: Always 'sbc'
+        metric_name: Name of the SBC metric being measured
+        metric_value: Numeric value of measurement
+        unit: Unit of measurement ('count', 'percent', 'cps', etc.)
+    """
+    
+    __tablename__ = "telephony_metrics"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    timestamp = Column(
+        DateTime(timezone=True),
+        nullable=False,
+        default=datetime.utcnow,
+        server_default=func.now()
+    )
+    server_type = Column(
+        String(50),
+        nullable=False,
+        default="sbc",
+        index=True,
+        comment="SBC/CUBE identifier"
+    )
+    metric_name = Column(
+        String(100),
+        nullable=False,
+        index=True,
+        comment="SBC metric name (concurrent_sessions, calls_per_second, etc.)"
+    )
+    metric_value = Column(
+        Float,
+        nullable=False,
+        comment="Numeric SBC metric value"
+    )
+    unit = Column(
+        String(20),
+        nullable=False,
+        comment="Unit of measurement for SBC metric"
+    )
+    
+    __table_args__ = (
+        Index('idx_sbc_metrics_timestamp', 'timestamp'),
+        Index('idx_sbc_metrics_name_timestamp', 'metric_name', 'timestamp'),
+        {'comment': 'SBC/CUBE metrics collected via REST API'}
+    )
+    
+    def __repr__(self) -> str:
+        return (
+            f"<SBCMetric("
+            f"id={self.id}, "
+            f"metric_name='{self.metric_name}', "
+            f"value={self.metric_value}, "
+            f"unit='{self.unit}', "
+            f"timestamp='{self.timestamp}')>"
+        )
+    
+    def to_dict(self) -> dict:
+        return {
+            "id": self.id,
+            "timestamp": self.timestamp.isoformat() if self.timestamp else None,
+            "server_type": self.server_type,
+            "metric_name": self.metric_name,
+            "metric_value": self.metric_value,
+            "unit": self.unit
+        }
+
+
+# =============================================================================
+# Expressway Metrics Model
+# =============================================================================
+class ExpresswayMetric(Base):
+    """
+    SQLAlchemy model for Expressway metrics.
+    
+    This model represents metrics collected from Expressway devices via REST API.
+    Each record captures:
+    - Traversal and non-traversal call statistics
+    - Device registration status
+    - Relay and media resource utilization
+    - CPU and memory usage
+    
+    Attributes:
+        id: Primary key, auto-incrementing integer
+        timestamp: UTC timestamp when metric was recorded
+        server_type: Always 'expressway'
+        metric_name: Name of the Expressway metric being measured
+        metric_value: Numeric value of measurement
+        unit: Unit of measurement ('count', 'percent', etc.)
+    """
+    
+    __tablename__ = "telephony_metrics"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    timestamp = Column(
+        DateTime(timezone=True),
+        nullable=False,
+        default=datetime.utcnow,
+        server_default=func.now()
+    )
+    server_type = Column(
+        String(50),
+        nullable=False,
+        default="expressway",
+        index=True,
+        comment="Expressway identifier"
+    )
+    metric_name = Column(
+        String(100),
+        nullable=False,
+        index=True,
+        comment="Expressway metric name (traversal_calls, registered_devices, etc.)"
+    )
+    metric_value = Column(
+        Float,
+        nullable=False,
+        comment="Numeric Expressway metric value"
+    )
+    unit = Column(
+        String(20),
+        nullable=False,
+        comment="Unit of measurement for Expressway metric"
+    )
+    
+    __table_args__ = (
+        Index('idx_expressway_metrics_timestamp', 'timestamp'),
+        Index('idx_expressway_metrics_name_timestamp', 'metric_name', 'timestamp'),
+        {'comment': 'Expressway metrics collected via REST API'}
+    )
+    
+    def __repr__(self) -> str:
+        return (
+            f"<ExpresswayMetric("
+            f"id={self.id}, "
+            f"metric_name='{self.metric_name}', "
+            f"value={self.metric_value}, "
+            f"unit='{self.unit}', "
+            f"timestamp='{self.timestamp}')>"
+        )
+    
+    def to_dict(self) -> dict:
+        return {
+            "id": self.id,
+            "timestamp": self.timestamp.isoformat() if self.timestamp else None,
+            "server_type": self.server_type,
+            "metric_name": self.metric_name,
+            "metric_value": self.metric_value,
+            "unit": self.unit
+        }
+
+
+# =============================================================================
 # Database Connection Management
 # =============================================================================
 
@@ -259,3 +507,19 @@ class DatabaseSession:
             self.db.commit()
         # Always close the session
         self.db.close()
+
+
+# =============================================================================
+# Metric Models Registry
+# =============================================================================
+# Dictionary mapping server types to their respective model classes
+METRIC_MODELS = {
+    "uccx": TelephonyMetric,
+    "cucm": TelephonyMetric,
+    "cms": TelephonyMetric,
+    "imp": TelephonyMetric,
+    "meeting_place": TelephonyMetric,
+    "tgw": TGWMetric,
+    "sbc": SBCMetric,
+    "expressway": ExpresswayMetric,
+}

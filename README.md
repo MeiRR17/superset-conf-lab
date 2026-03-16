@@ -1,6 +1,6 @@
 # Telephony Load Monitoring System
 
-A complete, production-grade local MVP for monitoring telephony load from Cisco servers (UCCX and CUCM). This system includes a mock data server, metrics collection gateway, PostgreSQL database, Apache Superset dashboards, Redis caching, and Nginx reverse proxy.
+A complete, production-grade local MVP for monitoring telephony load from Cisco servers using a microservices setup: a FastAPI mock server, a FastAPI proxy gateway collector, PostgreSQL for metrics storage, Apache Superset for dashboards, Redis for caching, and Nginx as a single entry reverse proxy.
 
 ## Architecture Overview
 
@@ -54,7 +54,7 @@ A complete, production-grade local MVP for monitoring telephony load from Cisco 
 # Build and start all services
 docker-compose up -d --build
 
-# Wait for all services to be healthy (about 60-90 seconds)
+# Wait for all services to be healthy
 docker-compose ps
 
 # View logs
@@ -65,11 +65,10 @@ docker-compose logs -f
 
 | Service | URL | Credentials |
 |---------|-----|-------------|
-| Superset Dashboards | http://localhost | admin/admin |
-| Nginx Proxy | http://localhost | - |
-| Proxy Gateway API | http://localhost/api/ | - |
-| Mock Server (UCCX) | http://localhost/mock/api/uccx/stats | - |
-| Mock Server (CUCM) | http://localhost/mock/api/cucm/system/stats | - |
+| Superset (Direct) | http://localhost:8088 | admin/admin |
+| Proxy Gateway (Direct) | http://localhost:8000 | - |
+| Mock Server (Direct) | http://localhost:8001 | - |
+| Nginx (Single Entry) | http://localhost | - |
 | PostgreSQL | localhost:5432 | postgres/password |
 | Redis | localhost:6379 | - |
 
@@ -83,30 +82,26 @@ docker-compose logs -f
 
 ```
 .
-├── docker-compose.yml          # Main orchestration file
-├── README.md                   # This file
-├──
+├── docker-compose.yml          # Orchestrates the microservices
+├── README.md
+├── .env.example                # Env template (optional)
 ├── postgres/
-│   └── init.sql                 # Database initialization script
-│
+│   └── init.sql                # Creates telephony_db + superset_db + telephony_metrics
+├── nginx/
+│   └── nginx.conf               # Reverse proxy routes (/ -> superset, /api -> gateway, /mock -> mock)
 ├── mock-server/
-│   ├── Dockerfile               # Mock server container image
-│   ├── requirements.txt         # Python dependencies
-│   └── main.py                  # FastAPI mock Cisco endpoints
-│
+│   ├── Dockerfile
+│   ├── requirements.txt
+│   └── main.py                  # FastAPI mock endpoints
 ├── proxy-gateway/
-│   ├── Dockerfile               # Gateway container image
-│   ├── requirements.txt         # Python dependencies
-│   ├── main.py                  # FastAPI collection service
-│   └── models.py                # SQLAlchemy database models
-│
-├── superset/
-│   ├── Dockerfile               # Custom Superset image
-│   ├── superset_config.py       # Superset configuration
-│   └── superset-init.sh         # Initialization script
-│
-└── nginx/
-    └── nginx.conf               # Reverse proxy configuration
+│   ├── Dockerfile
+│   ├── requirements.txt
+│   ├── models.py                # TelephonyMetric -> telephony_metrics
+│   └── main.py                  # Collector + polling
+└── superset/
+    ├── Dockerfile
+    ├── superset_config.py
+    └── superset-init.sh
 ```
 
 ## API Endpoints

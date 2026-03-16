@@ -194,7 +194,7 @@ def get_db() -> Session:
 
 def fetch_uccx_metrics() -> List[Dict[str, Any]]:
     """
-    Fetch metrics from the mock UCCX server.
+    Fetch metrics from UCCX server (mock or real based on feature toggle).
     
     Returns:
         List of metric dictionaries ready for database insertion.
@@ -202,33 +202,38 @@ def fetch_uccx_metrics() -> List[Dict[str, Any]]:
     Raises:
         requests.RequestException: If the API call fails.
     """
-    url = f"{MOCK_SERVER_URL}/api/uccx/stats"
-    logger.debug(f"Fetching UCCX metrics from: {url}")
+    if settings.use_real_uccx:
+        # Use real UCCX generator
+        from real_generators import UCCXRealGenerator
+        generator = UCCXRealGenerator(settings)
+        metrics_data = generator.generate_metrics()
+        server_type = metrics_data.get("server_type", "uccx")
+        metrics = metrics_data.get("metrics", {})
+    else:
+        # Use mock UCCX generator
+        from mock_generators import UCCXMockGenerator
+        generator = UCCXMockGenerator(settings)
+        metrics_data = generator.generate_metrics()
+        server_type = metrics_data.get("server_type", "uccx")
+        metrics = metrics_data.get("metrics", {})
     
-    response = requests.get(url, timeout=REQUEST_TIMEOUT)
-    response.raise_for_status()
-    data = response.json()
-    
-    server_type = data.get("server_type", "uccx")
-    metrics_data = data.get("metrics", {})
-    
-    # Transform the nested metrics into flat records
-    metrics = []
-    for metric_name, metric_info in metrics_data.items():
-        metrics.append({
+    # Transform nested metrics into flat records
+    flat_metrics = []
+    for metric_name, metric_info in metrics.items():
+        flat_metrics.append({
             "server_type": server_type,
             "metric_name": metric_name,
             "metric_value": metric_info["value"],
             "unit": metric_info["unit"]
         })
     
-    logger.debug(f"Fetched {len(metrics)} UCCX metrics")
-    return metrics
+    logger.debug(f"Fetched {len(flat_metrics)} UCCX metrics")
+    return flat_metrics
 
 
 def fetch_cucm_metrics() -> List[Dict[str, Any]]:
     """
-    Fetch metrics from the mock CUCM server.
+    Fetch metrics from CUCM server (mock or real based on feature toggle).
     
     Returns:
         List of metric dictionaries ready for database insertion.
@@ -236,28 +241,150 @@ def fetch_cucm_metrics() -> List[Dict[str, Any]]:
     Raises:
         requests.RequestException: If the API call fails.
     """
-    url = f"{MOCK_SERVER_URL}/api/cucm/system/stats"
-    logger.debug(f"Fetching CUCM metrics from: {url}")
+    if settings.use_real_cucm:
+        # Use real CUCM generator
+        from real_generators import CUCMRealGenerator
+        generator = CUCMRealGenerator(settings)
+        metrics_data = generator.generate_metrics()
+        server_type = metrics_data.get("server_type", "cucm")
+        metrics = metrics_data.get("metrics", {})
+    else:
+        # Use mock CUCM generator
+        from mock_generators import CUCMMockGenerator
+        generator = CUCMMockGenerator(settings)
+        metrics_data = generator.generate_metrics()
+        server_type = metrics_data.get("server_type", "cucm")
+        metrics = metrics_data.get("metrics", {})
     
-    response = requests.get(url, timeout=REQUEST_TIMEOUT)
-    response.raise_for_status()
-    data = response.json()
-    
-    server_type = data.get("server_type", "cucm")
-    metrics_data = data.get("metrics", {})
-    
-    # Transform the nested metrics into flat records
-    metrics = []
-    for metric_name, metric_info in metrics_data.items():
-        metrics.append({
+    # Transform nested metrics into flat records
+    flat_metrics = []
+    for metric_name, metric_info in metrics.items():
+        flat_metrics.append({
             "server_type": server_type,
             "metric_name": metric_name,
             "metric_value": metric_info["value"],
             "unit": metric_info["unit"]
         })
     
-    logger.debug(f"Fetched {len(metrics)} CUCM metrics")
-    return metrics
+    logger.debug(f"Fetched {len(flat_metrics)} CUCM metrics")
+    return flat_metrics
+
+
+def fetch_tgw_metrics() -> List[Dict[str, Any]]:
+    """
+    Fetch metrics from TGW router (mock or real based on feature toggle).
+    
+    Returns:
+        List of metric dictionaries ready for database insertion.
+    
+    Raises:
+        requests.RequestException: If the API call fails.
+    """
+    if settings.use_real_tgw:
+        # Use real TGW generator
+        from real_generators import TGWRealGenerator
+        generator = TGWRealGenerator(settings)
+        metrics_data = generator.generate_metrics()
+        server_type = metrics_data.get("server_type", "tgw")
+        metrics = metrics_data.get("metrics", {})
+    else:
+        # Use mock TGW generator
+        from mock_generators import TGWMockGenerator
+        generator = TGWMockGenerator(settings)
+        metrics_data = generator.generate_metrics()
+        server_type = metrics_data.get("server_type", "tgw")
+        metrics = metrics_data.get("metrics", {})
+    
+    # Transform nested metrics into flat records
+    flat_metrics = []
+    for metric_name, metric_info in metrics.items():
+        flat_metrics.append({
+            "server_type": server_type,
+            "metric_name": metric_name,
+            "metric_value": metric_info["value"],
+            "unit": metric_info["unit"]
+        })
+    
+    logger.debug(f"Fetched {len(flat_metrics)} TGW metrics")
+    return flat_metrics
+
+
+def fetch_sbc_metrics() -> List[Dict[str, Any]]:
+    """
+    Fetch metrics from SBC server (mock or real based on feature toggle).
+    
+    Returns:
+        List of metric dictionaries ready for database insertion.
+    
+    Raises:
+        requests.RequestException: If the API call fails.
+    """
+    if settings.use_real_sbc:
+        # Use real SBC generator
+        from real_generators import SBCRealGenerator
+        generator = SBCRealGenerator(settings)
+        metrics_data = generator.generate_metrics()
+        server_type = metrics_data.get("server_type", "sbc")
+        metrics = metrics_data.get("metrics", {})
+    else:
+        # Use mock SBC generator
+        from mock_generators import SBCMockGenerator
+        generator = SBCMockGenerator(settings)
+        metrics_data = generator.generate_metrics()
+        server_type = metrics_data.get("server_type", "sbc")
+        metrics = metrics_data.get("metrics", {})
+    
+    # Transform nested metrics into flat records
+    flat_metrics = []
+    for metric_name, metric_info in metrics.items():
+        flat_metrics.append({
+            "server_type": server_type,
+            "metric_name": metric_name,
+            "metric_value": metric_info["value"],
+            "unit": metric_info["unit"]
+        })
+    
+    logger.debug(f"Fetched {len(flat_metrics)} SBC metrics")
+    return flat_metrics
+
+
+def fetch_expressway_metrics() -> List[Dict[str, Any]]:
+    """
+    Fetch metrics from Expressway server (mock or real based on feature toggle).
+    
+    Returns:
+        List of metric dictionaries ready for database insertion.
+    
+    Raises:
+        requests.RequestException: If the API call fails.
+    """
+    if settings.use_real_expressway:
+        # Use real Expressway generator
+        from real_generators import ExpresswayRealGenerator
+        generator = ExpresswayRealGenerator(settings)
+        metrics_data = generator.generate_metrics()
+        server_type = metrics_data.get("server_type", "expressway")
+        metrics = metrics_data.get("metrics", {})
+    else:
+        # Use mock Expressway generator
+        from mock_generators import ExpresswayMockGenerator
+        generator = ExpresswayMockGenerator(settings)
+        metrics_data = generator.generate_metrics()
+        server_type = metrics_data.get("server_type", "expressway")
+        metrics = metrics_data.get("metrics", {})
+    
+    # Transform nested metrics into flat records
+    flat_metrics = []
+    for metric_name, metric_info in metrics.items():
+        flat_metrics.append({
+            "server_type": server_type,
+            "metric_name": metric_name,
+            "metric_value": metric_info["value"],
+            "unit": metric_info["unit"]
+        })
+    
+    logger.debug(f"Fetched {len(flat_metrics)} Expressway metrics")
+    return flat_metrics
 
 
 def save_metrics_to_database(metrics: List[Dict[str, Any]]) -> int:
@@ -295,16 +422,18 @@ def collect_all_metrics() -> Dict[str, Any]:
     Collect metrics from all sources and save to database.
     
     This is the main collection orchestrator that:
-    1. Fetches UCCX metrics
-    2. Fetches CUCM metrics
-    3. Saves all metrics to database
-    4. Returns summary of collection results
+    1. Fetches metrics from all configured equipment types
+    2. Saves all metrics to database
+    3. Returns summary of collection results
     
     Returns:
         Dictionary with collection results including:
         - success: Boolean indicating overall success
         - uccx_metrics_count: Number of UCCX metrics collected
         - cucm_metrics_count: Number of CUCM metrics collected
+        - tgw_metrics_count: Number of TGW metrics collected
+        - sbc_metrics_count: Number of SBC metrics collected
+        - expressway_metrics_count: Number of Expressway metrics collected
         - total_saved: Total metrics saved to database
         - errors: List of any errors encountered
         - timestamp: ISO format timestamp of collection
@@ -315,6 +444,9 @@ def collect_all_metrics() -> Dict[str, Any]:
     all_metrics = []
     uccx_count = 0
     cucm_count = 0
+    tgw_count = 0
+    sbc_count = 0
+    expressway_count = 0
     
     logger.info("Starting metrics collection cycle...")
     
@@ -340,6 +472,39 @@ def collect_all_metrics() -> Dict[str, Any]:
         logger.error(error_msg)
         errors.append(error_msg)
     
+    # Collect TGW metrics
+    try:
+        tgw_metrics = fetch_tgw_metrics()
+        all_metrics.extend(tgw_metrics)
+        tgw_count = len(tgw_metrics)
+        logger.info(f"Collected {tgw_count} TGW metrics")
+    except requests.RequestException as e:
+        error_msg = f"Failed to fetch TGW metrics: {str(e)}"
+        logger.error(error_msg)
+        errors.append(error_msg)
+    
+    # Collect SBC metrics
+    try:
+        sbc_metrics = fetch_sbc_metrics()
+        all_metrics.extend(sbc_metrics)
+        sbc_count = len(sbc_metrics)
+        logger.info(f"Collected {sbc_count} SBC metrics")
+    except requests.RequestException as e:
+        error_msg = f"Failed to fetch SBC metrics: {str(e)}"
+        logger.error(error_msg)
+        errors.append(error_msg)
+    
+    # Collect Expressway metrics
+    try:
+        expressway_metrics = fetch_expressway_metrics()
+        all_metrics.extend(expressway_metrics)
+        expressway_count = len(expressway_metrics)
+        logger.info(f"Collected {expressway_count} Expressway metrics")
+    except requests.RequestException as e:
+        error_msg = f"Failed to fetch Expressway metrics: {str(e)}"
+        logger.error(error_msg)
+        errors.append(error_msg)
+    
     # Save to database if we have any metrics
     total_saved = 0
     if all_metrics:
@@ -358,6 +523,9 @@ def collect_all_metrics() -> Dict[str, Any]:
         "success": len(errors) == 0,
         "uccx_metrics_count": uccx_count,
         "cucm_metrics_count": cucm_count,
+        "tgw_metrics_count": tgw_count,
+        "sbc_metrics_count": sbc_count,
+        "expressway_metrics_count": expressway_count,
         "total_saved": total_saved,
         "errors": errors,
         "timestamp": last_collection_time.isoformat()

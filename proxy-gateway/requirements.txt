@@ -27,3 +27,7 @@ pydantic==2.5.2
 
 # Python-dateutil - Useful for timestamp manipulation
 python-dateutil==2.8.2
+
+# PySNMP - SNMP library for TGW router monitoring
+# Supports SNMPv2c/v3 with robust error handling
+pysnmp==4.4.12
